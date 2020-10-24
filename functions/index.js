@@ -1,19 +1,15 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const app = require('express')();
+const cors = require('cors');
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+app.use(cors({ origin: true }));
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
-exports.saveEmail = functions.https.onRequest(async (request, response) => {
+const saveEmail = async (request, response) => {
   const address = request.body.emailAddress;
 
   // eslint-disable-next-line no-useless-escape
@@ -28,4 +24,8 @@ exports.saveEmail = functions.https.onRequest(async (request, response) => {
     functions.logger.error("Save Email ---", error);
     return response.status(500).json({ error: "An error occurred while attempting to save the email address" });
   }
-});
+};
+
+app.post('/saveEmail', saveEmail);
+
+exports.api = functions.https.onRequest(app);
