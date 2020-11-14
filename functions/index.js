@@ -2,12 +2,22 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const app = require('express')();
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 app.use(cors({ origin: true }));
 
 admin.initializeApp();
 
 const db = admin.firestore();
+
+const mailFrom = functions.config().mail.user;
+const mailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+      user: mailFrom,
+      pass: functions.config().mail.password
+  }
+});
 
 const saveEmail = async (request, response) => {
   const address = request.body.emailAddress;
@@ -19,6 +29,18 @@ const saveEmail = async (request, response) => {
 
   try {
     await db.collection("emails").add({ address });
+    const mailOptions = {
+      from: {
+        name: "Hexcord",
+        address: mailFrom
+      },
+      to: address,
+      subject: 'Welcome Aboard! You would be alerted as soon as the Hexcord service is up.',
+      html: `<p>Thanks for signing up for early access</p>`
+    };
+
+    await mailTransporter.sendMail(mailOptions);
+
     return response.json({ success: true });
   } catch (error) {
     functions.logger.error("Save Email ---", error);
