@@ -14,8 +14,8 @@ const mailFrom = functions.config().mail.user;
 const mailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-      user: mailFrom,
-      pass: functions.config().mail.password
+    user: mailFrom,
+    pass: functions.config().mail.password
   }
 });
 
@@ -28,7 +28,7 @@ const saveEmail = async (request, response) => {
   }
 
   try {
-    await db.collection("emails").add({ address });
+    await db.collection("emails").doc(address).set({ address, active: true });
     const mailOptions = {
       from: {
         name: "Hexcord",
@@ -48,6 +48,25 @@ const saveEmail = async (request, response) => {
   }
 };
 
+const unsubscribeEmail = async (request, response) => {
+  const address = request.body.emailAddress;
+
+  // eslint-disable-next-line no-useless-escape
+  if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(address)) {
+    return response.status(400).json({ error: "Invalid email address" });
+  }
+
+  try {
+    await db.collection("emails").doc(address).update({ active: false });
+
+    return response.json({ success: true });
+  } catch (error) {
+    functions.logger.error("Unsubscribe Email ---", error);
+    return response.status(500).json({ error: "An error occurred while attempting to unsubscribe the email address" });
+  }
+};
+
 app.post('/saveEmail', saveEmail);
+app.put('/unsubscribeBeta', unsubscribeEmail);
 
 exports.api = functions.https.onRequest(app);
