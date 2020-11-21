@@ -4,6 +4,8 @@ const app = require('express')();
 const cors = require('cors');
 const nodemailer = require('nodemailer');
 
+const HEXCORD_WEB = "https://www.hexcord.com";
+
 app.use(cors({ origin: true }));
 
 admin.initializeApp();
@@ -19,6 +21,32 @@ const mailTransporter = nodemailer.createTransport({
   }
 });
 
+const emailTemplate = ({ email, origin }) => `
+  <style>
+    .button__link {
+      border: none;
+      background: none;
+      padding: 0;
+      text-decoration: underline;
+      cursor: pointer;
+      outline: none;
+      color: #069;
+    }
+  </style>
+  <p>Hi there!</p>
+  <p>
+    So excited to have you onboard! We can't wait to have you try out Hexcord and as an early bird of course you get beta access.
+    How sweet is that? I knowwww.
+    Hexcord would be launching by the beginning of December and you can expect to be alerted the moment it is available.
+  </p>
+  <p>
+    If this was a mistake however and you didn't mean to sign up for beta access, it'll be sad :( to see you leave but you can unsubscribe 
+    <a href="${origin}/api/unsubscribeBeta?emailAddress=${email}&type=unsubscribe" target="_blank">here.</a>
+  </p>
+  <p>Cheers!</p>
+  <p>Hexcord.</p>
+`;
+
 const saveEmail = async (request, response) => {
   const address = request.body.emailAddress;
 
@@ -28,6 +56,9 @@ const saveEmail = async (request, response) => {
   }
 
   try {
+    const { _fieldsProto: existing } = await db.collection("emails").doc(address).get();
+    if (existing) return response.json({ success: true });
+
     await db.collection("emails").doc(address).set({ address, active: true });
     const mailOptions = {
       from: {
@@ -36,10 +67,17 @@ const saveEmail = async (request, response) => {
       },
       to: address,
       subject: 'Welcome Aboard! You would be alerted as soon as the Hexcord service is up.',
-      html: `<p>Thanks for signing up for early access</p>`
+      html: emailTemplate({ email: address, origin: HEXCORD_WEB }),
     };
 
-    await mailTransporter.sendMail(mailOptions);
+    mailTransporter.sendMail(mailOptions)
+      .then(info => {
+        if (!info.accepted.includes(address)) throw new Error("Invalid email address");
+        return db.collection("emails").doc(address).update({ verified: true });
+      })
+      .catch(error => {
+        functions.logger.error("Verify Email ---", error);
+      });
 
     return response.json({ success: true });
   } catch (error) {
@@ -49,7 +87,7 @@ const saveEmail = async (request, response) => {
 };
 
 const unsubscribeEmail = async (request, response) => {
-  const address = request.body.emailAddress;
+  const address = request.body.emailAddress || request.query.emailAddress;
 
   // eslint-disable-next-line no-useless-escape
   if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(address)) {
@@ -68,5 +106,6 @@ const unsubscribeEmail = async (request, response) => {
 
 app.post('/saveEmail', saveEmail);
 app.put('/unsubscribeBeta', unsubscribeEmail);
+app.get('/unsubscribeBeta', unsubscribeEmail);
 
 exports.api = functions.https.onRequest(app);
