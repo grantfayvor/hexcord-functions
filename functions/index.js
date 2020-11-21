@@ -59,7 +59,7 @@ const saveEmail = async (request, response) => {
     const { _fieldsProto: existing } = await db.collection("emails").doc(address).get();
     if (existing && existing.active && existing.active[existing.active.valueType]) return response.json({ success: true });
 
-    await db.collection("emails").doc(address).set({ address, active: true });
+    await db.collection("emails").doc(address).set({ address, active: true, created_at: new Date });
     const mailOptions = {
       from: {
         name: "Hexcord",
@@ -73,7 +73,7 @@ const saveEmail = async (request, response) => {
     mailTransporter.sendMail(mailOptions)
       .then(info => {
         if (!info.accepted.includes(address)) throw new Error("Invalid email address");
-        return db.collection("emails").doc(address).update({ verified: true });
+        return db.collection("emails").doc(address).update({ verified: true, verified_at: new Date });
       })
       .catch(error => {
         functions.logger.error("Verify Email ---", error);
