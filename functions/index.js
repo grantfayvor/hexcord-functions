@@ -41,7 +41,7 @@ const emailTemplate = ({ email, origin }) => `
   </p>
   <p>
     If this was a mistake however and you didn't mean to sign up for beta access, it'll be sad :( to see you leave but you can unsubscribe 
-    <a href="${origin}/api/unsubscribeBeta?emailAddress=${email}&type=unsubscribe" target="_blank">here.</a>
+    <a href="${origin}?emailAddress=${email}&type=unsubscribe" target="_blank">here.</a>
   </p>
   <p>Cheers!</p>
   <p>Hexcord.</p>
