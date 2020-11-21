@@ -57,7 +57,7 @@ const saveEmail = async (request, response) => {
 
   try {
     const { _fieldsProto: existing } = await db.collection("emails").doc(address).get();
-    if (existing && existing.active) return response.json({ success: true });
+    if (existing && existing.active && existing.active[existing.active.valueType]) return response.json({ success: true });
 
     await db.collection("emails").doc(address).set({ address, active: true });
     const mailOptions = {
