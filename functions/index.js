@@ -21,7 +21,7 @@ const mailTransporter = nodemailer.createTransport({
   }
 });
 
-const emailTemplate = ({ email, origin }) => `
+const emailTemplate = ({ unsubscribeURI }) => `
   <style>
     .button__link {
       border: none;
@@ -41,7 +41,7 @@ const emailTemplate = ({ email, origin }) => `
   </p>
   <p>
     If this was a mistake however and you didn't mean to sign up for beta access, it'll be sad :( to see you leave but you can unsubscribe 
-    <a href="${origin}?emailAddress=${email}&type=unsubscribe" target="_blank">here.</a>
+    <a href="${unsubscribeURI}" target="_blank">here.</a>
   </p>
   <p>Cheers!</p>
   <p>Hexcord.</p>
@@ -60,6 +60,7 @@ const saveEmail = async (request, response) => {
     if (existing && existing.active && existing.active[existing.active.valueType]) return response.json({ success: true });
 
     await db.collection("emails").doc(address).set({ address, active: true, created_at: new Date });
+    const unsubscribeURI = encodeURI(`${HEXCORD_WEB}/u?e=${Buffer.from(address).toString('base64')}`);
     const mailOptions = {
       from: {
         name: "Hexcord",
@@ -67,7 +68,7 @@ const saveEmail = async (request, response) => {
       },
       to: address,
       subject: 'Welcome Aboard! You would be alerted as soon as the Hexcord service is up.',
-      html: emailTemplate({ email: address, origin: HEXCORD_WEB }),
+      html: emailTemplate({ unsubscribeURI }),
     };
 
     mailTransporter.sendMail(mailOptions)
