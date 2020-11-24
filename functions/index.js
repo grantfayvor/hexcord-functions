@@ -35,7 +35,7 @@ const emailTemplate = ({ unsubscribeURI }) => `
   </style>
   <p>Hi there!</p>
   <p>
-    So excited to have you onboard! We can't wait to have you try out Hexcord and as an early bird of course you get beta access.
+    So excited to have you onboard! We can't wait to have you try out Hexcord. As an early bird of course you get beta access.
     How sweet is that? I knowwww.
     Hexcord would be launching by the beginning of December and you can expect to be alerted the moment it is available.
   </p>
